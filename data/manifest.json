@@ -1,0 +1,29 @@
+[
+  {
+    "id": "icps/AI初创企业.md",
+    "title": "AI初创企业",
+    "category": "ICP",
+    "tags": [
+      "AI",
+      "B2C",
+      "社交App",
+      "A轮",
+      "极度弹性需求",
+      "预算拮据"
+    ],
+    "url": "/data/icps/AI初创企业.md"
+  },
+  {
+    "id": "personas/CTO_老李.md",
+    "title": "CTO_老李",
+    "category": "Buyer Persona",
+    "tags": [
+      "CTO",
+      "成本敏感",
+      "免运维",
+      "弹性扩张",
+      "初创企业"
+    ],
+    "url": "/data/personas/CTO_老李.md"
+  }
+]

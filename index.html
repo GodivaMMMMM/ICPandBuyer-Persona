@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Persona Management Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
+    .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border-right: 1px solid #e2e8f0; }
+    .prose h1 { font-size: 2rem; font-weight: 700; border-bottom: 2px solid #e2e8f0; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+    .prose h2 { font-size: 1.5rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem; color: #1e293b; }
+    .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.5rem; }
+    .prose li { margin-bottom: 0.5rem; }
+    .prose strong { color: #0f172a; font-weight: 600; }
+    .prose blockquote { border-left: 4px solid #3b82f6; background: #f1f5f9; padding: 1rem; border-radius: 4px; color: #475569; font-style: italic; margin-bottom: 1.5rem; }
+    .tag-active { background-color: #3b82f6; color: white; border-color: #3b82f6; }
+    .tag-inactive { background-color: white; border-color: #cbd5e1; color: #64748b; }
+  </style>
+</head>
+<body class="h-screen overflow-hidden antialiased">
+  <div id="root" class="h-full"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    function App() {
+      const [manifest, setManifest] = useState([]);
+      const [activeDoc, setActiveDoc] = useState(null);
+      const [markdownHtml, setMarkdownHtml] = useState('');
+      const [activeTag, setActiveTag] = useState(null);
+      const [search, setSearch] = useState('');
+
+      useEffect(() => {
+        fetch('/data/manifest.json')
+          .then(res => res.json())
+          .then(data => {
+            setManifest(data);
+            if (data.length > 0) loadDocument(data[0]);
+          });
+      }, []);
+
+      const loadDocument = (doc) => {
+        setActiveDoc(doc);
+        fetch(doc.url)
+          .then(res => res.text())
+          .then(text => {
+            // Strip frontmatter
+            const content = text.replace(/^---\s*\n(.*?)\n---\s*\n/s, '');
+            setMarkdownHtml(marked.parse(content));
+          });
+      };
+
+      const allTags = useMemo(() => {
+        const tags = new Set();
+        manifest.forEach(d => d.tags.forEach(t => tags.add(t)));
+        return Array.from(tags).sort();
+      }, [manifest]);
+
+      const filteredDocs = manifest.filter(doc => {
+        const matchTag = activeTag ? doc.tags.includes(activeTag) : true;
+        const matchSearch = doc.title.toLowerCase().includes(search.toLowerCase());
+        return matchTag && matchSearch;
+      });
+
+      return (
+        <div className="flex h-full">
+          {/* Sidebar */}
+          <div className="w-80 glass flex flex-col h-full shadow-lg z-10">
+            <div className="p-6 border-b border-slate-200">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-2 rounded-lg shadow-sm">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                </div>
+                <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-800">Persona Hub</h1>
+              </div>
+              <input 
+                type="text" 
+                placeholder="Search personas..." 
+                className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                value={search} onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+            
+            <div className="p-6 flex-1 overflow-y-auto">
+              <div className="mb-6">
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Tags</h3>
+                <div className="flex flex-wrap gap-2">
+                  <button 
+                    onClick={() => setActiveTag(null)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${!activeTag ? 'tag-active' : 'tag-inactive hover:border-blue-400 hover:text-blue-500'}`}
+                  >All</button>
+                  {allTags.map(tag => (
+                    <button 
+                      key={tag} onClick={() => setActiveTag(tag === activeTag ? null : tag)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${activeTag === tag ? 'tag-active' : 'tag-inactive hover:border-blue-400 hover:text-blue-500'}`}
+                    >#{tag}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Documents ({filteredDocs.length})</h3>
+                <div className="flex flex-col gap-2">
+                  {filteredDocs.map(doc => (
+                    <div 
+                      key={doc.id} 
+                      onClick={() => loadDocument(doc)}
+                      className={`p-3 rounded-xl border cursor-pointer transition-all ${activeDoc?.id === doc.id ? 'bg-white border-blue-500 shadow-md ring-1 ring-blue-500' : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-sm'}`}
+                    >
+                      <div className="font-medium text-slate-800 mb-1">{doc.title}</div>
+                      <div className="flex justify-between items-center text-xs text-slate-500">
+                        <span className="font-semibold text-blue-600">{doc.category}</span>
+                        <span>{doc.tags.length} tags</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50 via-slate-50 to-white overflow-y-auto p-12 flex justify-center">
+            {activeDoc ? (
+              <div className="bg-white max-w-4xl w-full rounded-2xl shadow-xl border border-slate-100 p-10 h-max">
+                <div className="flex gap-2 mb-6">
+                  {activeDoc.tags.map(tag => (
+                    <span key={tag} className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">#{tag}</span>
+                  ))}
+                </div>
+                <div className="prose text-slate-700 leading-relaxed" dangerouslySetInnerHTML={{__html: markdownHtml}}></div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-slate-400 h-full">
+                <svg className="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <p>Select a document to view</p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
