@@ -429,7 +429,7 @@ html_template = """<!DOCTYPE html>
 </html>
 """
 
-with open(os.path.join(base_dir, 'dashboard.html'), 'w', encoding='utf-8') as f:
+with open(os.path.join(base_dir, 'index.html'), 'w', encoding='utf-8') as f:
     f.write(html_template)
 
 print("Dashboard with Split UI, standard dictionary, and Tag Manager built successfully!")
