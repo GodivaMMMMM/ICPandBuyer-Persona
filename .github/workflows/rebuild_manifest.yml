@@ -1,0 +1,34 @@
+name: Auto-rebuild Persona Hub
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'data/**'
+      - 'build_manifest.py'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+       contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run Build Script
+        run: python3 build_manifest.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: auto-rebuild index.html after persona data update" && git push)

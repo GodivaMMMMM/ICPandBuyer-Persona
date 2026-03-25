@@ -2,7 +2,7 @@ import os
 import json
 import re
 
-base_dir = '/Users/eva.zhang/Desktop/ICPandBuyer Persona'
+base_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(base_dir, 'data')
 
 manifest = []
